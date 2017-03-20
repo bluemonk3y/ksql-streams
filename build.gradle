@@ -1,0 +1,234 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+    }
+    dependencies {
+        classpath 'com.github.maiflai:gradle-scalatest:0.14'
+        classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3'
+        classpath 'net.researchgate:gradle-release:2.3.4'
+    }
+}
+
+apply plugin: 'signing'
+apply plugin: 'io.codearte.nexus-staging'
+apply plugin: 'net.researchgate.release'
+
+
+allprojects {
+    group = 'com.landoop'
+    version = version
+    description = "Small utility lib for Kafka Streams to help with simple payload transformations"
+
+    apply plugin: 'scala'
+    apply plugin: 'maven'
+    apply plugin: 'com.github.maiflai.scalatest'
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    ext {
+        scalaMajorVersion = '2.11'
+        scala = '2.11.8'
+        scalaCheck = '1.11.1'
+        scalaTest = '2.2.6'
+        junitVersion = '4.12'
+        avroSqlVersion = '0.3'
+        jsonSqlVersion = '0.4'
+        kafkaVersion = '0.10.2.0'
+        confluentVersion = '3.2.0'
+        scalaLoggingVersion = '3.5.0'
+        mockitoVersion = '2.7.13'
+        avroVersion = '1.8.1'
+        avro4sVersion = "1.6.2"
+        jacksonVersion = "2.8.5"
+        json4sVersion = "3.5.0"
+        bouncyCastleVersion = "1.54"
+        apacheDirectoryVersion = "2.0.0-M22"
+        apacheDirectoryApiVersion = "1.0.0-M33"
+
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "http://packages.confluent.io/maven/" }
+        maven { url "http://repo.typesafe.com/typesafe/releases/" }
+    }
+
+    configurations {
+        provided
+        compile.extendsFrom provided
+
+    }
+
+    dependencies {
+        compile "org.scala-lang:scala-library:$scala"
+        compile "com.typesafe.scala-logging:scala-logging_$scalaMajorVersion:$scalaLoggingVersion"
+
+        compile "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
+        compile("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion") {
+            exclude group: "com.fasterxml.jackson.core"
+        }
+        compile "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
+
+        //compile "com.fasterxml.jackson.module:jackson-module-scala_$scalaMajorVersion:$jacksonVersion"
+        compile("org.json4s:json4s-jackson_$scalaMajorVersion:$json4sVersion") {
+            exclude group: 'com.fasterxml.jackson.core'
+        }
+        compile "org.json4s:json4s-native_$scalaMajorVersion:$json4sVersion"
+
+        compile "org.apache.avro:avro:$avroVersion"
+        provided("io.confluent:kafka-avro-serializer:$confluentVersion") {
+            exclude group: 'com.fasterxml.jackson.core'
+        }
+        provided("org.apache.kafka:kafka-streams:${kafkaVersion}") {
+            exclude group: 'com.fasterxml.jackson.core'
+        }
+        compile "com.sksamuel.avro4s:avro4s-core_$scalaMajorVersion:${avro4sVersion}"
+
+        compile("com.landoop:avro-sql_$scalaMajorVersion:$avroSqlVersion") {
+            exclude group: "com.fasterxml.jackson.core"
+        }
+        compile("com.landoop:json-sql_$scalaMajorVersion:${jsonSqlVersion}") {
+            exclude group: "com.fasterxml.jackson.core"
+        }
+
+        testCompile "org.mockito:mockito-core:$mockitoVersion"
+        testCompile "org.scalacheck:scalacheck_$scalaMajorVersion:$scalaCheck"
+        testCompile "org.scalatest:scalatest_$scalaMajorVersion:$scalaTest"
+        testCompile "junit:junit:$junitVersion"
+        testCompile "org.apache.curator:curator-test:3.1.0"
+        testCompile 'org.powermock:powermock-module-junit4:1.6.5'
+        testCompile 'org.pegdown:pegdown:1.1.0'
+
+        testCompile("io.confluent:kafka-schema-registry:$confluentVersion") {
+            exclude group: "com.fasterxml.jackson.core"
+        }
+        testCompile("io.confluent:kafka-schema-registry-client:$confluentVersion") {
+            exclude group: "com.fasterxml.jackson.core"
+        }
+        //testCompile "org.apache.kafka:kafka-clients:kafkaVersion"
+        testCompile "org.apache.avro:avro:$avroVersion"
+
+        testCompile "org.apache.kafka:kafka_${scalaMajorVersion}:$kafkaVersion"
+        testCompile "org.apache.kafka:kafka_${scalaMajorVersion}:${kafkaVersion}:test@jar"
+        testCompile "org.apache.kafka:kafka-streams:$kafkaVersion"
+
+        testCompile "org.apache.kafka:kafka-clients:${kafkaVersion}:test@jar"
+        testCompile "io.confluent:common-config:${confluentVersion}"
+        testCompile "io.confluent:common-utils:${confluentVersion}"
+        //testCompile "io.confluent:rest-utils:${confluentVersion}"
+        testCompile "org.bouncycastle:bcpkix-jdk15on:${bouncyCastleVersion}"
+        testCompile("org.apache.directory.api:api-all:${apacheDirectoryApiVersion}") {
+            exclude group: "xml-apis", module: "xml-apis"
+            exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
+        }
+    }
+
+    test {
+        maxParallelForks = 1
+        minHeapSize '256m'
+        maxHeapSize '2048m'
+        systemProperty 'keystore', projectDir.canonicalPath + "/src/test/resources/stc_keystore.jks"
+        systemProperty 'truststore', projectDir.canonicalPath + "/src/test/resources/stc_truststore.jks"
+    }
+
+    task testJar(type: Jar, dependsOn: testClasses) {
+        baseName = "test-${project.archivesBaseName}"
+        from sourceSets.test.output
+    }
+
+    configurations {
+        tests
+    }
+
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    task javadocJar(type: Jar) {
+        classifier = 'javadoc'
+        from javadoc
+    }
+
+    task scaladocJar(type: Jar) {
+        classifier = 'scaladoc'
+        from '../LICENSE'
+        from scaladoc
+    }
+
+    tasks.withType(Tar) {
+        compression Compression.GZIP
+        extension = 'tgz'
+    }
+
+    artifacts {
+        archives javadocJar, scaladocJar, sourcesJar
+    }
+
+    task compile(dependsOn: 'compileScala')
+
+    signing {
+        required { gradle.taskGraph.hasTask("uploadArchives") }
+        sign configurations.archives
+    }
+
+    // OSSRH publication
+    if (project.hasProperty('release')) {
+        uploadArchives {
+            repositories {
+                mavenDeployer {
+                    // POM signature
+                    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                    // Target repository
+                    repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                        authentication(userName: ossrhUsername, password: ossrhPassword)
+                    }
+                    pom.project {
+                        name project.name
+                        description project.description
+                        packaging 'jar'
+                        url 'https://github.com/datamountaineer/kafka-connect-common'
+
+                        scm {
+                            connection 'scm:git:https://github.com/datamountaineer/kafka-connect-common.git'
+                            developerConnection 'scm:git:git@github.com:datamountaineer/kafka-connect-common.git'
+                            url 'https://github.com/datamountaineer/kafka-connect-common.git'
+                        }
+
+                        licenses {
+                            license {
+                                name 'Apache License 2.0'
+                                url 'http://www.apache.org/licenses/LICENSE-2.0.html'
+                                distribution 'repo'
+                            }
+                        }
+
+                        developers {
+                            developer {
+                                id = 'stheppi'
+                                name = 'Stefan Bocutiu'
+                                email = 'stefan@datamountaineer.com'
+                            }
+                            developer {
+                                id = 'Antwnis'
+                                name = 'Antonios Chalkiopoulos'
+                                email = 'antonios@datamountaineer.com'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        nexusStaging {
+            packageGroup = project.getGroup()
+            username = ossrhUsername
+            password = ossrhPassword
+        }
+    }
+}
+
