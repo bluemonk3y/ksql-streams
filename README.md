@@ -1,4 +1,6 @@
-[![Build Status](https://travis-ci.org/Landoop/kstreams-sql-transform.svg?branch=master)](https://travis-ci.org/Landoop/kstreams-sql-transform) [<img src="https://img.shields.io/maven-central/v/com.landoop/kstreams-sql-transform*.svg?label=latest%20release"/>](http://search.maven.org/#search|ga|1|kstreams-sql-transform) [![GitHub license](https://img.shields.io/github/license/Landoop/kstreams-sql-transform.svg)]()
+[![Build Status](https://travis-ci.org/Landoop/kstreams-sql-transform.svg?branch=master)](https://travis-ci.org/Landoop/kstreams-sql-transform) 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.landoop/kstreams-sql-transform_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.landoop/kstreams-sql-transform_2.11)
+[![GitHub license](https://img.shields.io/github/license/Landoop/kstreams-sql-transform.svg)]()
 
 # Kafka KStreams-Sql-Transform
 Use SQL to project your Kafka message value layout when using Kafka Streaming.
